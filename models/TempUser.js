@@ -29,11 +29,14 @@ const TempUserSchema = new mongoose.Schema({
   bio: {
     type: String,
   },
+  country: {
+    type: String,
+  },
   otp: String,
   otpExpires: Date,
 });
 
-TempUserSchema.pre('save', async function(next) {
+TempUserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
@@ -46,7 +49,7 @@ TempUserSchema.pre('save', async function(next) {
   }
 });
 
-TempUserSchema.methods.comparePassword = async function(candidatePassword) {
+TempUserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

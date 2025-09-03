@@ -1,13 +1,15 @@
 const Joi = require('joi');
 
 exports.authSchema = Joi.object({
-  email: Joi.string().email().required(),
+email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   name: Joi.string().min(2).required(),
-  active_Status: Joi.boolean().default(false),
-  profile_image: Joi.string().allow(''),
-  title: Joi.string().allow(''),
-  bio: Joi.string().allow(''),
+  country: Joi.string().required(),
+  // These fields are optional for registration
+  active_Status: Joi.boolean().default(false).optional(),
+  profile_image: Joi.string().uri().allow('').optional(),
+  title: Joi.string().allow('').optional(),
+  bio: Joi.string().allow('').optional(),
 });
 
 exports.otpSchema = Joi.object({

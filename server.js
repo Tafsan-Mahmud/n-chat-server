@@ -1,7 +1,8 @@
+const dotenv = require('dotenv');
+dotenv.config();
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
@@ -13,7 +14,7 @@ const authRoutes = require('./routes/auth.routes');
 const errorHandler = require('./middleware/errorHandler');
 const { socketAuth } = require('./middleware/socketAuth.middleware');
 
-dotenv.config();
+
 
 const app = express();
 const server = http.createServer(app);

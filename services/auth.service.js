@@ -103,6 +103,7 @@ exports.verifyOtpAndLogin = async (email, otp) => {
       active_Status: true,
       profile_image: tempUser.profile_image,
       title: tempUser.title,
+      country: tempUser.country,
       bio: tempUser.bio,
     });
     await TempUser.deleteOne({ email });

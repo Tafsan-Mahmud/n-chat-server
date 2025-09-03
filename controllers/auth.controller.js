@@ -2,8 +2,10 @@ const authService = require('../services/auth.service');
 
 exports.registerUser = async (req, res, next) => {
   try {
-    const { email, password, name, active_Status, profile_image, title, bio } = req.body;
-    await authService.register({ email, password, name, active_Status, profile_image, title, bio });
+    const { email, password, name, active_Status, profile_image, title, bio, country } = req.body;
+
+    console.log(req.body);
+    await authService.register({ email, password, name, active_Status, profile_image, title,country, bio });
 
     res.status(201).json({
       message: 'OTP sent to your email. Please verify to log in.',
