@@ -9,7 +9,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const { Server } = require('socket.io');
-
+const  cron  = require('node-cron');
+const  TempUser  = require('./models/TempUser');
 const authRoutes = require('./routes/auth.routes');
 const errorHandler = require('./middleware/errorHandler');
 const { socketAuth } = require('./middleware/socketAuth.middleware');
@@ -92,6 +93,16 @@ io.on('connection', (socket) => {
       text: message,
     });
   });
+});
+// Scheduled task to clean up unverified users
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    const now = new Date();
+    const result = await TempUser.deleteMany({ otpExpires: { $lt: now } });
+    console.log(`Cron job: Deleted ${result.deletedCount} expired temporary users.`);
+  } catch (error) {
+    console.error('Error running cron job:', error);
+  }
 });
 
 const PORT = process.env.PORT || 5000;

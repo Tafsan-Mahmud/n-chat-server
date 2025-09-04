@@ -1,16 +1,37 @@
 const authService = require('../services/auth.service');
+const crypto = require('crypto');
+const util = require('util');
+const randomBytesAsync = util.promisify(crypto.randomBytes);
+async function generateSecret() {
+  const secretLengthInBytes = 150;
+  try {
+    const buffer = await randomBytesAsync(secretLengthInBytes);
+    return buffer.toString('hex');
+  } catch (err) {
+    console.error('An error occurred while generating the secret:', err);
+    throw err; // Re-throw the error to be handled by the caller.
+  }
+}
+
 
 exports.registerUser = async (req, res, next) => {
   try {
     const { email, password, name, active_Status, profile_image, title, bio, country } = req.body;
+    const token = email+await generateSecret();
 
-    console.log(req.body);
-    await authService.register({ email, password, name, active_Status, profile_image, title,country, bio });
-
-    res.status(201).json({
-      message: 'OTP sent to your email. Please verify to log in.',
-      email,
+   const response = await authService.register({ email, password, name, active_Status, profile_image, title,country,token, bio });
+   if(response.status === 400 && response.message === 'User with this email already exists.'){
+    res.status(400).json({
+      message: 'User with this email already exists.',
+      redirect:'/authOTP'
     });
+   }else{
+    res.status(201).json({
+      message: 'OTP sent to your email. Please verify to log in',
+      email:response.email,
+      token:response.token,
+    });
+   }
   } catch (error) {
     next(error);
   }

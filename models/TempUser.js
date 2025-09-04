@@ -22,14 +22,20 @@ const TempUserSchema = new mongoose.Schema({
   },
   profile_image: {
     type: String,
+    default: '',
   },
   title: {
     type: String,
+    default: '',
   },
   bio: {
     type: String,
+    default: '',
   },
   country: {
+    type: String,
+  },
+  token: {
     type: String,
   },
   otp: String,

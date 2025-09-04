@@ -22,12 +22,15 @@ const UserSchema = new mongoose.Schema({
   },
   profile_image: {
     type: String,
+    default: '',
   },
   title: {
     type: String,
+    default: '',
   },
   bio: {
     type: String,
+    default: '',
   },
   country: {
     type: String,

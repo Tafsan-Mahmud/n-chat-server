@@ -36,12 +36,11 @@ exports.register = async (userData) => {
   if (userExists || tempUserExists) {
     const error = new Error('User with this email already exists.');
     error.status = 400;
-    throw error;
+    return error;
   }
 
   const tempUser = await TempUser.create(userData);
   await generateAndSendOtp(tempUser);
-
   return tempUser;
 };
 
@@ -85,7 +84,6 @@ exports.verifyOtpAndLogin = async (email, otp) => {
     error.status = 404;
     throw error;
   }
-
   let userToVerify = tempUser || user;
 
   const now = new Date();
