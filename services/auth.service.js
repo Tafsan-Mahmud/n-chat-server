@@ -33,8 +33,13 @@ exports.register = async (userData) => {
   const userExists = await User.findOne({ email: userData.email });
   const tempUserExists = await TempUser.findOne({ email: userData.email });
 
-  if (userExists || tempUserExists) {
+  if (userExists) {
     const error = new Error('User with this email already exists.');
+    error.status = 401;
+    return error;
+  }
+  if (tempUserExists) {
+    const error = new Error('You have already try to register with this email.We have already sent a OTP to your email Please VERIFY!.');
     error.status = 400;
     return error;
   }

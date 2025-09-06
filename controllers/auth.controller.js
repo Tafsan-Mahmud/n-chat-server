@@ -20,17 +20,29 @@ exports.registerUser = async (req, res, next) => {
     const token = email+await generateSecret();
 
    const response = await authService.register({ email, password, name, active_Status, profile_image, title,country,token, bio });
-   if(response.status === 400 && response.message === 'User with this email already exists.'){
-    res.status(400).json({
-      message: 'User with this email already exists.',
-      redirect:'/authOTP'
+   if(response.status === 401 && response.message === 'User with this email already exists.'){
+    res.status(401).json({
+      message: response.message,
     });
    }else{
-    res.status(201).json({
-      message: 'OTP sent to your email. Please verify to log in',
+    if(response.status === 400 && response.message === 'You have already try to register with this email.We have already sent a OTP to your email Please VERIFY!.'){
+      res.status(400).json({
+      message: response.message,
       email:response.email,
       token:response.token,
+      redirect:'/authOTP'
     });
+
+    }else{
+      res.status(201).json({
+            Status: "SUCCESS",
+            message: 'OTP sent to your email. Please verify to log in',
+            email:response.email,
+            token:response.token,
+            redirect:'/authOTP'
+      });
+    }
+    
    }
   } catch (error) {
     next(error);
