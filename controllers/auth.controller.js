@@ -13,7 +13,6 @@ async function generateSecret() {
   }
 }
 
-
 exports.registerUser = async (req, res, next) => {
   try {
     const { email, password, name, active_Status, profile_image, title, bio, country } = req.body;
@@ -35,7 +34,7 @@ exports.registerUser = async (req, res, next) => {
 
     }else{
       res.status(201).json({
-            Status: "SUCCESS",
+            status: "SUCCESS",
             message: 'OTP sent to your email. Please verify to log in',
             email:response.email,
             token:response.token,
@@ -71,11 +70,12 @@ exports.verifyOtp = async (req, res, next) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 86400000
     });
 
     res.status(200).json({
+      status:'SUCCESS',
       message: 'Login successful',
       _id: user._id,
       email: user.email,

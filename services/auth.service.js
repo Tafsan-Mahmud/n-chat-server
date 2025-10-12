@@ -19,7 +19,7 @@ const generateAndSendOtp = async (user) => {
   user.otpExpires = otpExpires;
   await user.save();
 
-  const emailSubject = 'Your OTP for Authentication';
+  const emailSubject = 'NChat OTP for Authentication';
   const emailHtml = `
     <h1>Your OTP Code</h1>
     <p>Please use the following code to complete your action:</p>
@@ -39,7 +39,7 @@ exports.register = async (userData) => {
     return error;
   }
   if (tempUserExists) {
-    const error = new Error('You have already try to register with this email.We have already sent a OTP to your email Please VERIFY!.');
+    const error = new Error('You have already try to register with this email. We have already sent a OTP to your email Please VERIFY!.');
     error.status = 400;
     return error;
   }
@@ -50,7 +50,7 @@ exports.register = async (userData) => {
 };
 
 exports.login = async (email, password) => {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select('+password');
 
   if (user) {
     if (!(await user.comparePassword(password))) {
@@ -61,20 +61,21 @@ exports.login = async (email, password) => {
     await generateAndSendOtp(user);
     return user;
   }
+  const tempUser = await TempUser.findOne({ email }).select('+password');
 
-  const tempUser = await TempUser.findOne({ email });
   if (tempUser) {
+    // Check if the temporary user's password is correct
     if (!(await tempUser.comparePassword(password))) {
       const error = new Error('Invalid email or password.');
       error.status = 401;
       throw error;
     }
+    
     await generateAndSendOtp(tempUser);
     const error = new Error('Email not verified. Please check your email for the OTP.');
     error.status = 403;
     throw error;
   }
-
   const error = new Error('Invalid email or password.');
   error.status = 401;
   throw error;

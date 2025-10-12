@@ -1,7 +1,7 @@
 const Joi = require('joi');
 
 exports.authSchema = Joi.object({
-email: Joi.string().email().required(),
+  email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
   name: Joi.string().min(2).required(),
   country: Joi.string().required(),
@@ -11,6 +11,12 @@ email: Joi.string().email().required(),
   title: Joi.string().allow('').optional(),
   bio: Joi.string().allow('').optional(),
 });
+
+exports.signinAuthSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
+});
+
 
 exports.otpSchema = Joi.object({
   email: Joi.string().email().required(),
