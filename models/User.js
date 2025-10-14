@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    select: false,
   },
   name: {
     type: String,
@@ -37,23 +38,20 @@ const UserSchema = new mongoose.Schema({
   },
   otp: String,
   otpExpires: Date,
+}, {
+    timestamps: true
 });
+
 
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    return next(error);
-  }
+  next(); 
 });
 
 UserSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return await bcrypt.compare(candidatePassword, this.password.toString());
 };
 
 module.exports = mongoose.model('User', UserSchema);

@@ -11,6 +11,7 @@ const TempUserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    select: false,
   },
   name: {
     type: String,
@@ -40,6 +41,8 @@ const TempUserSchema = new mongoose.Schema({
   },
   otp: String,
   otpExpires: Date,
+}, {
+  timestamps: true
 });
 
 TempUserSchema.pre('save', async function (next) {
@@ -48,7 +51,8 @@ TempUserSchema.pre('save', async function (next) {
   }
   try {
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    // Hashing the plain text password
+    this.password = await bcrypt.hash(this.password.trim(), salt);
     next();
   } catch (error) {
     return next(error);
@@ -56,7 +60,7 @@ TempUserSchema.pre('save', async function (next) {
 });
 
 TempUserSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return await bcrypt.compare(candidatePassword, this.password.toString());
 };
 
 module.exports = mongoose.model('TempUser', TempUserSchema);

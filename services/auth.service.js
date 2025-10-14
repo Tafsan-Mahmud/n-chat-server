@@ -6,7 +6,9 @@ const sendEmail = require('../utils/sendEmail');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, {
+  return jwt.sign({
+    id
+  }, JWT_SECRET, {
     expiresIn: '1d',
   });
 };
@@ -30,8 +32,12 @@ const generateAndSendOtp = async (user) => {
 };
 
 exports.register = async (userData) => {
-  const userExists = await User.findOne({ email: userData.email });
-  const tempUserExists = await TempUser.findOne({ email: userData.email });
+  const userExists = await User.findOne({
+    email: userData.email
+  });
+  const tempUserExists = await TempUser.findOne({
+    email: userData.email
+  });
 
   if (userExists) {
     const error = new Error('User with this email already exists.');
@@ -49,11 +55,14 @@ exports.register = async (userData) => {
   return tempUser;
 };
 
+
 exports.login = async (email, password) => {
   const user = await User.findOne({ email }).select('+password');
 
   if (user) {
-    if (!(await user.comparePassword(password))) {
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
       const error = new Error('Invalid email or password.');
       error.status = 401;
       throw error;
@@ -64,13 +73,12 @@ exports.login = async (email, password) => {
   const tempUser = await TempUser.findOne({ email }).select('+password');
 
   if (tempUser) {
-    // Check if the temporary user's password is correct
-    if (!(await tempUser.comparePassword(password))) {
+    const isMatch = await tempUser.comparePassword(password);
+    if (!isMatch) {
       const error = new Error('Invalid email or password.');
       error.status = 401;
       throw error;
     }
-    
     await generateAndSendOtp(tempUser);
     const error = new Error('Email not verified. Please check your email for the OTP.');
     error.status = 403;
@@ -81,22 +89,25 @@ exports.login = async (email, password) => {
   throw error;
 };
 
+
 exports.verifyOtpAndLogin = async (email, otp) => {
-  const tempUser = await TempUser.findOne({ email });
-  const user = await User.findOne({ email });
+
+  const tempUser = await TempUser.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select('+password');
 
   if (!tempUser && !user) {
-    const error = new Error('User not found.');
+    const error = new Error('User not found. please enter emil correctly or register first.');
     error.status = 404;
-    throw error;
+    return error;
   }
   let userToVerify = tempUser || user;
 
   const now = new Date();
+
   if (userToVerify.otp !== otp || now > userToVerify.otpExpires) {
     const error = new Error('Invalid or expired OTP.');
-    error.status = 400;
-    throw error;
+    error.status = 401;
+    return error;
   }
 
   if (tempUser) {
@@ -118,7 +129,7 @@ exports.verifyOtpAndLogin = async (email, otp) => {
     userToVerify.otpExpires = undefined;
     await userToVerify.save();
     const token = generateToken(userToVerify._id);
-    return { user: userToVerify, token };
+    return { user: userToVerify,  token };
   }
 };
 
@@ -129,9 +140,9 @@ exports.updateProfile = async (userId, updateData) => {
     error.status = 404;
     throw error;
   }
-  
+
   Object.assign(user, updateData);
-  
+
   await user.save();
   return user;
 };
