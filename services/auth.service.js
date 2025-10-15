@@ -56,38 +56,74 @@ exports.register = async (userData) => {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 exports.login = async (email, password) => {
+
   const user = await User.findOne({ email }).select('+password');
 
   if (user) {
-
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      const error = new Error('Invalid email or password.');
+      const error = new Error('Invalid credentials.');
       error.status = 401;
-      throw error;
+      return {err:error, error:true};
     }
     await generateAndSendOtp(user);
-    return user;
+    return {email:user.email, success:true};
   }
+
   const tempUser = await TempUser.findOne({ email }).select('+password');
 
   if (tempUser) {
     const isMatch = await tempUser.comparePassword(password);
     if (!isMatch) {
-      const error = new Error('Invalid email or password.');
+      const error = new Error('Invalid credentials.');
       error.status = 401;
-      throw error;
+     return {err:error, error:true};
     }
     await generateAndSendOtp(tempUser);
     const error = new Error('Email not verified. Please check your email for the OTP.');
     error.status = 403;
-    throw error;
+    return {err:error, process:true, email:tempUser.email};
   }
-  const error = new Error('Invalid email or password.');
-  error.status = 401;
-  throw error;
+  const error = new Error('Invalid credentials.');
+    error.status = 401;
+  return {err:error, error:true};
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 exports.verifyOtpAndLogin = async (email, otp) => {
@@ -96,7 +132,7 @@ exports.verifyOtpAndLogin = async (email, otp) => {
   const user = await User.findOne({ email }).select('+password');
 
   if (!tempUser && !user) {
-    const error = new Error('User not found. please enter emil correctly or register first.');
+    const error = new Error('Verification failed. Register again.');
     error.status = 404;
     return error;
   }
@@ -132,6 +168,11 @@ exports.verifyOtpAndLogin = async (email, otp) => {
     return { user: userToVerify,  token };
   }
 };
+
+
+
+
+
 
 exports.updateProfile = async (userId, updateData) => {
   const user = await User.findById(userId);

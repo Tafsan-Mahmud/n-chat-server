@@ -1,8 +1,8 @@
 const authService = require('../services/auth.service');
 const crypto = require('crypto');
 const util = require('util');
-const bcrypt = require('bcryptjs');
 const randomBytesAsync = util.promisify(crypto.randomBytes);
+
 async function generateSecret() {
   const secretLengthInBytes = 150;
   try {
@@ -10,7 +10,7 @@ async function generateSecret() {
     return buffer.toString('hex');
   } catch (err) {
     console.error('An error occurred while generating the secret:', err);
-    throw err; // Re-throw the error to be handled by the caller.
+    throw err;
   }
 }
 
@@ -26,19 +26,20 @@ exports.registerUser = async (req, res, next) => {
       bio,
       country
     } = req.body;
-    const token = email + await generateSecret();
-
-    const response = await authService.register({
-      email,
-      password,
-      name,
+    const token = await generateSecret() + email;
+    const trimmedData = {
+      email: email.trim(),
+      password: password.trim(),
+      name: name.trim(),
+      country: country.trim(),
       active_Status,
+      token,
       profile_image,
       title,
-      country,
-      token,
-      bio
-    });
+      bio,
+    };
+    const response = await authService.register(trimmedData);
+    
     if (response.status === 401 && response.message === 'User with this email already exists.') {
       res.status(401).json({
         message: response.message,
@@ -70,14 +71,40 @@ exports.registerUser = async (req, res, next) => {
 
 exports.loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-
-    await authService.login(email, password);
-
-    res.status(200).json({
-      message: 'OTP sent to your email. Please verify to log in.',
+    const {
       email,
-    });
+      password
+    } = req.body;
+    const trimmedEmail = email ? email.trim() : email;
+    const trimmedPassword = password ? password.trim() : password;
+
+    const response = await authService.login(trimmedEmail, trimmedPassword);
+
+    if (response.success === true) {
+      const secret = await generateSecret();
+      res.status(200).json({
+        status: "SUCCESS",
+        message: 'OTP sent to your email. Please verify to log in.',
+        email: response.email,
+        secret: secret,
+        redirect: '/authOTP'
+      });
+    } 
+    if (response.process === true) {
+      res.status(403).json({
+        status: "PROCESS!",
+        message: response.err.message,
+        email: response.email,
+        redirect: '/authOTP',
+      });
+    }
+    if(response.error === true){
+      res.status(401).json({
+        status: "ERROR!",
+        message: response.err.message,
+      });
+    }
+
   } catch (error) {
     next(error);
   }
@@ -85,14 +112,21 @@ exports.loginUser = async (req, res, next) => {
 
 exports.verifyOtp = async (req, res, next) => {
   try {
-    const { email, otp} = req.body;
+    const {
+      email,
+      otp
+    } = req.body;
     const response = await authService.verifyOtpAndLogin(email, otp);
-    const { user, token } = response;
+    const {
+      user,
+      token
+    } = response;
 
-    if (response.message === 'User not found. please enter emil correctly or register first.') {
+    if (response.message === 'Verification failed. Register again.') {
       res.status(404).json({
         message: response.message,
-        status: "ERROR!"
+        status: "ERROR!",
+        redirect:'/register'
       });
     }
     if (response.message === 'Invalid or expired OTP.') {
@@ -158,7 +192,7 @@ exports.logoutUser = (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
   });
   res.status(200).json({
     message: 'Logged out successfully'
