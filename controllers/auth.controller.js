@@ -13,6 +13,13 @@ async function generateSecret() {
     throw err;
   }
 }
+// verify the user JWT token every request 
+
+exports.validateToken = async (req, res)=>{
+  res.status(200).json({ valid: true });
+}
+
+
 
 exports.registerUser = async (req, res, next) => {
   try {
@@ -71,13 +78,9 @@ exports.registerUser = async (req, res, next) => {
 
 exports.loginUser = async (req, res, next) => {
   try {
-    const {
-      email,
-      password
-    } = req.body;
+    const { email, password } = req.body;
     const trimmedEmail = email ? email.trim() : email;
     const trimmedPassword = password ? password.trim() : password;
-
     const response = await authService.login(trimmedEmail, trimmedPassword);
 
     if (response.success === true) {
@@ -161,6 +164,16 @@ exports.verifyOtp = async (req, res, next) => {
     next(error);
   }
 };
+exports.logoutUser = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  res.status(200).json({
+    message: 'Logged out successfully'
+  });
+};
 
 exports.updateProfile = async (req, res, next) => {
   try {
@@ -188,13 +201,3 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-exports.logoutUser = (req, res) => {
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  });
-  res.status(200).json({
-    message: 'Logged out successfully'
-  });
-};

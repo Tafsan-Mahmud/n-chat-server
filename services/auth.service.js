@@ -55,23 +55,6 @@ exports.register = async (userData) => {
   return tempUser;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 exports.login = async (email, password) => {
 
   const user = await User.findOne({ email }).select('+password');
@@ -105,26 +88,6 @@ exports.login = async (email, password) => {
     error.status = 401;
   return {err:error, error:true};
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 exports.verifyOtpAndLogin = async (email, otp) => {
 
