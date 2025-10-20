@@ -15,8 +15,11 @@ async function generateSecret() {
 }
 // verify the user JWT token every request 
 
-exports.validateToken = async (req, res)=>{
-  res.status(200).json({ valid: true });
+exports.validateToken = async (req, res) => {
+
+  res.status(200).json({
+    message: 'Token is valid.'
+  });
 }
 
 
@@ -46,7 +49,7 @@ exports.registerUser = async (req, res, next) => {
       bio,
     };
     const response = await authService.register(trimmedData);
-    
+
     if (response.status === 401 && response.message === 'User with this email already exists.') {
       res.status(401).json({
         message: response.message,
@@ -78,7 +81,10 @@ exports.registerUser = async (req, res, next) => {
 
 exports.loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password
+    } = req.body;
     const trimmedEmail = email ? email.trim() : email;
     const trimmedPassword = password ? password.trim() : password;
     const response = await authService.login(trimmedEmail, trimmedPassword);
@@ -92,7 +98,7 @@ exports.loginUser = async (req, res, next) => {
         secret: secret,
         redirect: '/authOTP'
       });
-    } 
+    }
     if (response.process === true) {
       res.status(403).json({
         status: "PROCESS!",
@@ -101,7 +107,7 @@ exports.loginUser = async (req, res, next) => {
         redirect: '/authOTP',
       });
     }
-    if(response.error === true){
+    if (response.error === true) {
       res.status(401).json({
         status: "ERROR!",
         message: response.err.message,
@@ -129,7 +135,7 @@ exports.verifyOtp = async (req, res, next) => {
       res.status(404).json({
         message: response.message,
         status: "ERROR!",
-        redirect:'/register'
+        redirect: '/register'
       });
     }
     if (response.message === 'Invalid or expired OTP.') {
@@ -142,9 +148,9 @@ exports.verifyOtp = async (req, res, next) => {
     if (user && token) {
       res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 86400000
+        secure: true,
+        sameSite: 'none',
+        maxAge: 86400000,
       });
 
       res.status(200).json({
@@ -200,4 +206,3 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
-

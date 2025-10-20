@@ -90,9 +90,8 @@ exports.login = async (email, password) => {
 };
 
 exports.verifyOtpAndLogin = async (email, otp) => {
-
-  const tempUser = await TempUser.findOne({ email }).select('+password');
-  const user = await User.findOne({ email }).select('+password');
+  const tempUser = await TempUser.findOne({email}).select('+password');
+  const user = await User.findOne({email}).select('+password');
 
   if (!tempUser && !user) {
     const error = new Error('Verification failed. Register again.');

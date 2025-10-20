@@ -1,13 +1,12 @@
 const jwt = require('jsonwebtoken');
 
-exports.verifyTokenOnly = (req, res, next) => {
+exports.verifyTokenOnly = async (req, res, next) => {
     let token;
-
     // 1. Get token from HttpOnly cookie set by Express
     if (req.cookies.token) {
         token = req.cookies.token;
+        console.log(token,'tokens');
     }
-
     // Fallback Check: Check if Next.js middleware explicitly forwarded the cookie
     // This handles the race condition where req.cookies.token might not be set yet,
     // but the token is available in the request headers (which Next.js forwards).
@@ -19,7 +18,6 @@ exports.verifyTokenOnly = (req, res, next) => {
         }
     }
 
-
     if (!token) {
         const error = new Error('Not authorized, no token provided.');
         error.status = 401;
@@ -28,7 +26,8 @@ exports.verifyTokenOnly = (req, res, next) => {
 
     try {
         // Only verify the signature and expiration
-        jwt.verify(token, process.env.JWT_SECRET);
+       const decode= jwt.verify(token, process.env.JWT_SECRET);
+       console.log(decode,'sdfhasdfjhsdfjhdsf')
         next();
     } catch (error) {
         // Log the error to see what went wrong (e.g., TokenExpiredError, JsonWebTokenError)
