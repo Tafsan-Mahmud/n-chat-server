@@ -1,6 +1,7 @@
 const authService = require('../services/auth.service');
 const crypto = require('crypto');
 const util = require('util');
+const User = require('../models/User');
 const randomBytesAsync = util.promisify(crypto.randomBytes);
 
 async function generateSecret() {
@@ -22,6 +23,20 @@ exports.validateToken = async (req, res) => {
   });
 }
 
+// return login users safe data.
+
+exports.returnME = async (req, res) => {
+  res.status(200).json({
+    status: 'SUCCESS USER',
+    _id: req.user._id,
+    email: req.user.email,
+    name: req.user.name,
+    active_Status: req.user.active_Status,
+    profile_image: req.user.profile_image,
+    title: req.user.title,
+    bio: req.user.bio,
+  });
+};
 
 
 exports.registerUser = async (req, res, next) => {
@@ -148,8 +163,8 @@ exports.verifyOtp = async (req, res, next) => {
     if (user && token) {
       res.cookie('token', token, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 86400000,
       });
 
@@ -170,6 +185,7 @@ exports.verifyOtp = async (req, res, next) => {
     next(error);
   }
 };
+
 exports.logoutUser = (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,

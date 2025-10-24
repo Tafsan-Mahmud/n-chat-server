@@ -5,7 +5,6 @@ exports.verifyTokenOnly = async (req, res, next) => {
     // 1. Get token from HttpOnly cookie set by Express
     if (req.cookies.token) {
         token = req.cookies.token;
-        console.log(token,'tokens');
     }
     // Fallback Check: Check if Next.js middleware explicitly forwarded the cookie
     // This handles the race condition where req.cookies.token might not be set yet,
@@ -26,8 +25,7 @@ exports.verifyTokenOnly = async (req, res, next) => {
 
     try {
         // Only verify the signature and expiration
-       const decode= jwt.verify(token, process.env.JWT_SECRET);
-       console.log(decode,'sdfhasdfjhsdfjhdsf')
+        jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch (error) {
         // Log the error to see what went wrong (e.g., TokenExpiredError, JsonWebTokenError)

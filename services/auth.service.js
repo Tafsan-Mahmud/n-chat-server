@@ -6,8 +6,9 @@ const sendEmail = require('../utils/sendEmail');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const generateToken = (id) => {
+  const _id = id
   return jwt.sign({
-    id
+    _id
   }, JWT_SECRET, {
     expiresIn: '1d',
   });
