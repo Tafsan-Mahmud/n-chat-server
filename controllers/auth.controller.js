@@ -167,7 +167,12 @@ exports.verifyOtp = async (req, res, next) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 86400000,
       });
-
+      res.cookie('hasSession', 'true', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 86400000,
+      });
       res.status(200).json({
         status: 'SUCCESS',
         message: 'Login successful',
@@ -187,14 +192,30 @@ exports.verifyOtp = async (req, res, next) => {
 };
 
 exports.logoutUser = (req, res) => {
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  });
-  res.status(200).json({
-    message: 'Logged out successfully'
-  });
+  try {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
+    res.clearCookie('hasSession', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: 'Logout successful',
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Server error while logging out',
+    });
+  }
 };
 
 exports.updateProfile = async (req, res, next) => {
