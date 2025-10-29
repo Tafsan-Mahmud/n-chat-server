@@ -6,6 +6,7 @@ exports.registerAuthSchema = Joi.object({
   password: Joi.string().min(8).required(),
   name: Joi.string().min(2).required(),
   country: Joi.string().required(),
+  gender: Joi.string().required(),
   // These fields are optional for registration
   active_Status: Joi.boolean().default(false).optional(),
   profile_image: Joi.string().uri().allow('').optional(),

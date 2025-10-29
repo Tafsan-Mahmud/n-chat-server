@@ -29,6 +29,9 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  gender: {
+    type: String,
+  },
   bio: {
     type: String,
     default: '',
@@ -39,7 +42,7 @@ const UserSchema = new mongoose.Schema({
   otp: String,
   otpExpires: Date,
 }, {
-    timestamps: true
+  timestamps: true
 });
 
 
@@ -47,7 +50,7 @@ UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
-  next(); 
+  next();
 });
 
 UserSchema.methods.comparePassword = async function (candidatePassword) {

@@ -29,6 +29,9 @@ const TempUserSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  gender: {
+    type: String,
+  },
   bio: {
     type: String,
     default: '',

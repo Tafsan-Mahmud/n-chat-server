@@ -34,6 +34,7 @@ exports.returnME = async (req, res) => {
     active_Status: req.user.active_Status,
     profile_image: req.user.profile_image,
     title: req.user.title,
+    gender:req.user.gender,
     bio: req.user.bio,
   });
 };
@@ -48,6 +49,7 @@ exports.registerUser = async (req, res, next) => {
       active_Status,
       profile_image,
       title,
+      gender,
       bio,
       country
     } = req.body;
@@ -61,6 +63,7 @@ exports.registerUser = async (req, res, next) => {
       token,
       profile_image,
       title,
+      gender,
       bio,
     };
     const response = await authService.register(trimmedData);
@@ -182,6 +185,7 @@ exports.verifyOtp = async (req, res, next) => {
         active_Status: user.active_Status,
         profile_image: user.profile_image,
         title: user.title,
+        gender:user.gender,
         bio: user.bio,
       });
     }

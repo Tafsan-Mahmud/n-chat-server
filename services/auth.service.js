@@ -117,6 +117,7 @@ exports.verifyOtpAndLogin = async (email, otp) => {
       active_Status: true,
       profile_image: tempUser.profile_image,
       title: tempUser.title,
+      gender:tempUser.gender,
       country: tempUser.country,
       bio: tempUser.bio,
     });
