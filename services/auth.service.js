@@ -23,11 +23,167 @@ const generateAndSendOtp = async (user) => {
   await user.save();
 
   const emailSubject = 'NChat OTP for Authentication';
-  const emailHtml = `
-    <h1>Your OTP Code</h1>
-    <p>Please use the following code to complete your action:</p>
-    <h2><b>${otp}</b></h2>
-    <p>This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>`;
+  const emailHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NChat Verification</title>
+
+    <!-- FORCE LIGHT MODE (APPLE MAIL / IOS) -->
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+
+    <style>
+        body, table, td {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                width: 92% !important;
+            }
+
+            .otp {
+                font-size: 26px !important;
+                letter-spacing: 6px !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    bgcolor="#f5f7fb"
+    style="
+        margin:0;
+        padding:0;
+        background:#f5f7fb !important;
+        color:#000000 !important;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    "
+>
+
+<table width="100%" height="100%" bgcolor="#f5f7fb" style="background:#f5f7fb !important;">
+    <tr>
+        <td align="center" valign="middle" style="padding:40px 12px;">
+
+            <div style="position: relative; width: 100%; max-width: 420px;">
+
+                <div class="card"
+                    style="
+                        position: relative;
+                        z-index: 10;
+                        background: rgba(255, 255, 255, 0.743) !important;
+                        border-radius: 10px;
+                        border: 2px solid #ffffff;
+                        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.063);
+                        backdrop-filter: blur(14px);
+                        -webkit-backdrop-filter: blur(14px);
+                        text-align: center;
+                        overflow: hidden;
+                    "
+                >
+
+                    <table width="100%">
+                        <tr>
+                            <td style="padding:28px 32px 18px;">
+                                <img
+                                    src="https://i.ibb.co.com/7JYvpzdx/logo-Name.png"
+                                    alt="NChat"
+                                    width="110"
+                                    style="display:block;margin:auto;"
+                                >
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding:0 32px 24px;">
+                                <h2 style="
+                                    margin:0 0 6px;
+                                    font-size:20px;
+                                    font-weight:600;
+                                    color:#0f172a !important;
+                                ">
+                                    Verify your sign-in
+                                </h2>
+
+                                <p style="
+                                    margin:0 0 20px;
+                                    font-size:14px;
+                                    line-height:1.5;
+                                    color:#475569 !important;
+                                ">
+                                    Use the verification code below to continue using <strong>NChat</strong>.
+                                </p>
+
+                                <div style="
+                                    display:inline-block;
+                                    background:rgba(25,60,184,0.07) !important;
+                                    border:1px solid rgba(25,60,184,0.25);
+                                    border-radius:8px;
+                                    padding:14px 22px;
+                                    margin-bottom:16px;
+                                ">
+                                    <span class="otp" style="
+                                        font-family:'Courier New',Courier,monospace;
+                                        font-size:30px;
+                                        font-weight:700;
+                                        letter-spacing:8px;
+                                        color:#193cb8 !important;
+                                    ">
+                                        ${otp}
+                                    </span>
+                                </div>
+
+                                <p style="
+                                    margin:0;
+                                    font-size:12.5px;
+                                    color:#64748b !important;
+                                ">
+                                    This code expires in 15 minutes.<br>
+                                    If you didn’t request it, you can safely ignore this email.
+                                </p>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style="
+                                padding:14px;
+                                background:rgba(255,255,255,0.45) !important;
+                                border-top:1px solid rgba(15,23,42,0.05);
+                            ">
+                                <p style="
+                                    margin:0;
+                                    font-size:11px;
+                                    color:#94a3b8 !important;
+                                    letter-spacing:1.2px;
+                                    text-transform:uppercase;
+                                    font-weight:600;
+                                ">
+                                    © 2026 NChat
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+
+                </div>
+            </div>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
+`;
 
   await sendEmail(user.email, emailSubject, emailHtml);
 };
@@ -58,41 +214,65 @@ exports.register = async (userData) => {
 
 exports.login = async (email, password) => {
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({
+    email
+  }).select('+password');
 
   if (user) {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       const error = new Error('Invalid credentials.');
       error.status = 401;
-      return {err:error, error:true};
+      return {
+        err: error,
+        error: true
+      };
     }
     await generateAndSendOtp(user);
-    return {email:user.email, success:true};
+    return {
+      email: user.email,
+      success: true
+    };
   }
 
-  const tempUser = await TempUser.findOne({ email }).select('+password');
+  const tempUser = await TempUser.findOne({
+    email
+  }).select('+password');
 
   if (tempUser) {
     const isMatch = await tempUser.comparePassword(password);
     if (!isMatch) {
       const error = new Error('Invalid credentials.');
       error.status = 401;
-     return {err:error, error:true};
+      return {
+        err: error,
+        error: true
+      };
     }
     await generateAndSendOtp(tempUser);
     const error = new Error('Email not verified. Please check your email for the OTP.');
     error.status = 403;
-    return {err:error, process:true, email:tempUser.email};
+    return {
+      err: error,
+      process: true,
+      email: tempUser.email
+    };
   }
   const error = new Error('Invalid credentials.');
-    error.status = 401;
-  return {err:error, error:true};
+  error.status = 401;
+  return {
+    err: error,
+    error: true
+  };
 };
 
 exports.verifyOtpAndLogin = async (email, otp) => {
-  const tempUser = await TempUser.findOne({email}).select('+password');
-  const user = await User.findOne({email}).select('+password');
+  const tempUser = await TempUser.findOne({
+    email
+  }).select('+password');
+  const user = await User.findOne({
+    email
+  }).select('+password');
 
   if (!tempUser && !user) {
     const error = new Error('Verification failed. Register again.');
@@ -117,19 +297,27 @@ exports.verifyOtpAndLogin = async (email, otp) => {
       active_Status: true,
       profile_image: tempUser.profile_image,
       title: tempUser.title,
-      gender:tempUser.gender,
+      gender: tempUser.gender,
       country: tempUser.country,
       bio: tempUser.bio,
     });
-    await TempUser.deleteOne({ email });
+    await TempUser.deleteOne({
+      email
+    });
     const token = generateToken(newUser._id);
-    return { user: newUser, token };
+    return {
+      user: newUser,
+      token
+    };
   } else {
     userToVerify.otp = undefined;
     userToVerify.otpExpires = undefined;
     await userToVerify.save();
     const token = generateToken(userToVerify._id);
-    return { user: userToVerify,  token };
+    return {
+      user: userToVerify,
+      token
+    };
   }
 };
 
