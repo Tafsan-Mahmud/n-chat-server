@@ -117,7 +117,7 @@ const generateAndSendOtp = async (user) => {
 
                                 <p style="
                                     margin:0 0 20px;
-                                    font-size:14px;
+                                    font-size:13px;
                                     line-height:1.5;
                                     color:#475569 !important;
                                 ">
@@ -326,16 +326,3 @@ exports.verifyOtpAndLogin = async (email, otp) => {
 
 
 
-exports.updateProfile = async (userId, updateData) => {
-  const user = await User.findById(userId);
-  if (!user) {
-    const error = new Error('User not found.');
-    error.status = 404;
-    throw error;
-  }
-
-  Object.assign(user, updateData);
-
-  await user.save();
-  return user;
-};

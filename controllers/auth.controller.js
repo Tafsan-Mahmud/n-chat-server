@@ -17,11 +17,22 @@ async function generateSecret() {
 // verify the user JWT token every request 
 
 exports.validateToken = async (req, res) => {
+  const user = await User.findById(req.tokenUserId)
+    .select('isProfileComplete');
 
-  res.status(200).json({
-    message: 'Token is valid.'
+  if (!user) {
+    return res.status(401).json({
+      valid: false
+    });
+  }
+
+  return res.status(200).json({
+    valid: true,
+    isProfileComplete: user.isProfileComplete,
+    message: 'Token is valid.',
   });
-}
+};
+
 
 // return login users safe data.
 
@@ -34,7 +45,7 @@ exports.returnME = async (req, res) => {
     active_Status: req.user.active_Status,
     profile_image: req.user.profile_image,
     title: req.user.title,
-    gender:req.user.gender,
+    gender: req.user.gender,
     bio: req.user.bio,
   });
 };
@@ -80,7 +91,12 @@ exports.registerUser = async (req, res, next) => {
           token: response.token,
           redirect: '/authOTP'
         });
-
+        res.cookie('otp_pending', '_eyJfaWQiOiI2OTAyMjdhYzI2DEiLCJpYXQiOjE3Njg5MDc5NTE', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          maxAge: 15 * 60 * 1000 // 15 minutes
+        });
       } else {
         res.status(201).json({
           status: "SUCCESS",
@@ -88,6 +104,12 @@ exports.registerUser = async (req, res, next) => {
           email: response.email,
           token: response.token,
           redirect: '/authOTP'
+        });
+        res.cookie('otp_pending', '_eyJfaWQiOiI2OTAyMjdhYzI2DEiLCJpYXQiOjE3Njg5MDc5NTE', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          maxAge: 15 * 60 * 1000 // 15 minutes
         });
       }
 
@@ -109,6 +131,12 @@ exports.loginUser = async (req, res, next) => {
 
     if (response.success === true) {
       const secret = await generateSecret();
+      res.cookie('otp_pending', '_eyJfaWQiOiI2OTAyMjdhYzI2DEiLCJpYXQiOjE3Njg5MDc5NTE', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 5 * 60 * 1000 // 15 minutes
+      });
       res.status(200).json({
         status: "SUCCESS",
         message: 'OTP sent to your email. Please verify to log in.',
@@ -118,12 +146,20 @@ exports.loginUser = async (req, res, next) => {
       });
     }
     if (response.process === true) {
+      res.cookie('otp_pending', '_eyJfaWQiOiI2OTAyMjdhYzI2DEiLCJpYXQiOjE3Njg5MDc5NTE', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 15 * 60 * 1000 // 15 minutes
+      });
       res.status(403).json({
         status: "PROCESS!",
         message: response.err.message,
         email: response.email,
         redirect: '/authOTP',
       });
+
+
     }
     if (response.error === true) {
       res.status(401).json({
@@ -176,7 +212,10 @@ exports.verifyOtp = async (req, res, next) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 86400000,
       });
-      res.status(200).json({
+
+      res.clearCookie('otp_pending');
+
+      return res.status(200).json({
         status: 'SUCCESS',
         message: 'Login successful',
         _id: user._id,
@@ -185,9 +224,10 @@ exports.verifyOtp = async (req, res, next) => {
         active_Status: user.active_Status,
         profile_image: user.profile_image,
         title: user.title,
-        gender:user.gender,
+        gender: user.gender,
         bio: user.bio,
       });
+
     }
 
   } catch (error) {
@@ -222,28 +262,3 @@ exports.logoutUser = (req, res) => {
   }
 };
 
-exports.updateProfile = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const {
-      name,
-      profile_image,
-      title,
-      bio
-    } = req.body;
-
-    const updatedUser = await authService.updateProfile(userId, {
-      name,
-      profile_image,
-      title,
-      bio
-    });
-
-    res.status(200).json({
-      message: 'Profile updated successfully',
-      user: updatedUser,
-    });
-  } catch (error) {
-    next(error);
-  }
-};

@@ -21,10 +21,18 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  isProfileComplete: {
+    type: Boolean,
+    default: false,
+  },
   profile_image: {
     type: String,
     default: '',
   },
+  profile_image_id: {
+  type: String, // Cloudinary public_id
+  default: '',
+},
   title: {
     type: String,
     default: '',

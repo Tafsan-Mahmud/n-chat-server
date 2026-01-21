@@ -12,6 +12,7 @@ const { Server } = require('socket.io');
 const  cron  = require('node-cron');
 const  TempUser  = require('./models/TempUser');
 const authRoutes = require('./routes/auth.routes');
+const userRoutes = require('./routes/user.routes');
 const errorHandler = require('./middleware/errorHandler');
 const { socketAuth } = require('./middleware/socketAuth.middleware');
 
@@ -61,6 +62,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 
 
 // Custom error handler

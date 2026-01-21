@@ -1,14 +1,13 @@
 const { Router } = require('express');
 
-// Note: Imports now use named imports from the controller file
-const {  registerUser,  loginUser,   logoutUser,  verifyOtp, returnME, updateProfile,  validateToken } = require('../controllers/auth.controller'); 
-const { protect } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validateRequest');
 const { registerAuthSchema,   signinAuthSchema,  otpSchema,  profileUpdateSchema } = require('../utils/joiSchemas'); 
-
-const { upload,  uploadImageToCloudinary } = require('../middleware/upload.middleware');
-
+const { updateProfile } = require('../controllers/user.controller');
+const { protect } = require('../middleware/auth.middleware');
+const { upload } = require('../middleware/uploadProfile.middleware');
 const { verifyTokenOnly } = require('../middleware/tokenVerify.middleware');
+const {  registerUser,  loginUser,   logoutUser,  verifyOtp, returnME,  validateToken } = require('../controllers/auth.controller'); 
+
 
 const router = Router();
 
@@ -25,7 +24,6 @@ router.post('/logout', logoutUser);
 
 router.get('/me',protect, returnME);
 
-// Operations
-router.put('/profile', protect,  upload.single('profile_image'),  uploadImageToCloudinary,  validate (profileUpdateSchema),  updateProfile);
+
 
 module.exports = router;

@@ -29,6 +29,7 @@ exports.otpSchema = Joi.object({
 exports.profileUpdateSchema = Joi.object({
   name: Joi.string().min(2).optional(),
   profile_image: Joi.string().uri().allow('').optional(),
+  avatarUrl: Joi.string().uri().optional(),
   title: Joi.string().allow('').optional(),
   bio: Joi.string().allow('').optional(),
   country: Joi.string().optional(), // Re-added country to allow updates
