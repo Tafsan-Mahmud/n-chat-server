@@ -1,3 +1,4 @@
+const Profiles = require('../models/Profiles');
 const User = require('../models/User');
 
 exports.updateProfile = async (userId, updateData) => {
@@ -8,7 +9,7 @@ exports.updateProfile = async (userId, updateData) => {
     error.status = 404;
     throw error;
   }
-  console.log(updateData);
+
   // Explicit field assignment (prevents mass-assignment attacks)
 
   if (updateData.title !== undefined) user.title = updateData.title;
@@ -25,8 +26,15 @@ exports.updateProfile = async (userId, updateData) => {
   // Server-controlled flag (cannot be spoofed)
   user.isProfileComplete = true;
 
+  await Profiles.create({
+    user_id: user._id,
+    user_email: user.email,
+    profile_image_url: updateData.profile_image || user.profile_image,
+    profile_image_id: updateData.profile_image_id || '0',
+    upload_date: new Date(),
+  });
+
   await user.save();
   const userObj = user.toObject();
-
   return userObj;
 };

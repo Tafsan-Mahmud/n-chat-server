@@ -9,8 +9,6 @@ exports.updateProfile = async (req, res, next) => {
       bio,
       avatarUrl
     } = req.body;
-    
-    console.log(req.body);
 
     // Image comes either from Cloudinary upload or avatar URL
     const profile_image = req.file?.path || avatarUrl;
@@ -30,6 +28,7 @@ exports.updateProfile = async (req, res, next) => {
     });
 
     return res.status(200).json({
+      status: 'SUCCESS',
       message: 'Profile updated successfully',
       user: updatedUser,
     });
