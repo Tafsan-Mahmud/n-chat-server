@@ -17,7 +17,6 @@ const errorHandler = require('./middleware/errorHandler');
 const { socketAuth } = require('./middleware/socketAuth.middleware');
 
 
-
 const app = express();
 const server = http.createServer(app);
 

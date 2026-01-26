@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.11"
   }
 }
