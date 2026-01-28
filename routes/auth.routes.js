@@ -6,7 +6,7 @@ const { updateProfile } = require('../controllers/user.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { upload } = require('../middleware/uploadProfile.middleware');
 const { verifyTokenOnly } = require('../middleware/tokenVerify.middleware');
-const {  registerUser,  loginUser,   logoutUser,  verifyOtp, returnME,  validateToken } = require('../controllers/auth.controller'); 
+const {  registerUser,  loginUser,   logoutUser,  verifyOtp, returnME,  validateToken, forgotPasswordInit, forgotPassword, validateResetToken } = require('../controllers/auth.controller'); 
 
 
 const router = Router();
@@ -14,11 +14,15 @@ const router = Router();
 // token checking
 router.get('/validate-token', verifyTokenOnly, validateToken);
 
+
 // Authentication
 router.post('/register', validate(registerAuthSchema), registerUser);
 router.post('/login', validate(signinAuthSchema), loginUser); 
 router.post('/verify-otp', validate(otpSchema), verifyOtp);
 router.post('/logout', logoutUser);
+router.post('/forgot-password/init', forgotPasswordInit );
+router.post('/forgot-password', forgotPassword );
+router.post('/validate-reset-token', validateResetToken);
 
 // return login users safe data with secure token verification....
 

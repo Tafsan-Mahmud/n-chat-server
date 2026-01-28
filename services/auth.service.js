@@ -96,7 +96,7 @@ const generateAndSendOtp = async (user) => {
                         <tr>
                             <td style="padding:28px 32px 18px;">
                                 <img
-                                    src="https://i.ibb.co.com/7JYvpzdx/logo-Name.png"
+                                    src="https://res.cloudinary.com/db9b6b0bu/image/upload/v1769615534/logoName_dojoic.png"
                                     alt="NChat"
                                     width="110"
                                     style="display:block;margin:auto;"

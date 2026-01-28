@@ -30,9 +30,9 @@ const UserSchema = new mongoose.Schema({
     default: '',
   },
   profile_image_id: {
-  type: String, // Cloudinary public_id
-  default: '',
-},
+    type: String, // Cloudinary public_id
+    default: '',
+  },
   title: {
     type: String,
     default: '',
@@ -47,6 +47,8 @@ const UserSchema = new mongoose.Schema({
   country: {
     type: String,
   },
+  resetTokenHash: String,
+  resetTokenExpires: Date,
   otp: String,
   otpExpires: Date,
 }, {
