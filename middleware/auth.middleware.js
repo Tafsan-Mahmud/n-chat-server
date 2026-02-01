@@ -17,6 +17,7 @@ exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded._id).select('-password');
     
+    
     if (!req.user) {
       const error = new Error('User specified in token no longer exists or was deleted.');
       error.status = 401;

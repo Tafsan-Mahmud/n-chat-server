@@ -39,6 +39,7 @@ app.use(cors({
   origin: process.env.CLIENT_URL,
   credentials: true,
 }));
+// app.set('trust proxy', true);
 app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('tiny'));

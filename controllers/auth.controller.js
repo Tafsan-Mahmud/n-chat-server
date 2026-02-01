@@ -4,6 +4,8 @@ const util = require('util');
 const User = require('../models/User');
 const randomBytesAsync = util.promisify(crypto.randomBytes);
 const sendEmail = require('../utils/sendEmail');
+const bcrypt = require('bcryptjs');
+const PasswordResetLog = require('../models/PasswordResetLog');
 
 async function generateSecret() {
   const secretLengthInBytes = 150;
@@ -38,6 +40,7 @@ exports.validateToken = async (req, res) => {
 // return login users safe data.
 
 exports.returnME = async (req, res) => {
+  await req.user.cleanupSecurityFields();
   res.status(200).json({
     status: 'SUCCESS USER',
     _id: req.user._id,
@@ -49,6 +52,7 @@ exports.returnME = async (req, res) => {
     gender: req.user.gender,
     bio: req.user.bio,
   });
+
 };
 
 
@@ -65,7 +69,9 @@ exports.registerUser = async (req, res, next) => {
       bio,
       country
     } = req.body;
+
     const token = await generateSecret() + email;
+
     const trimmedData = {
       email: email.trim(),
       password: password.trim(),
@@ -78,47 +84,61 @@ exports.registerUser = async (req, res, next) => {
       gender,
       bio,
     };
+
     const response = await authService.register(trimmedData);
 
-    if (response.status === 401 && response.message === 'User with this email already exists.') {
-      res.status(401).json({
+    const otpCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 15 * 60 * 1000,
+    };
+
+    // ─────────────────────────────
+    // CASE 1: user exists
+    // ─────────────────────────────
+    if (
+      response.status === 401 &&
+      response.message === 'User with this email already exists.'
+    ) {
+      return res.status(401).json({
         message: response.message,
       });
-    } else {
-      if (response.status === 400 && response.message === 'You have already try to register with this email.We have already sent a OTP to your email Please VERIFY!.') {
-        res.status(400).json({
-          message: response.message,
-          email: response.email,
-          token: response.token,
-          redirect: '/authOTP'
-        });
-        res.cookie('otp_pending', '_eyJfaWQiOiI2OTAyMjdhYzI2DEiLCJpYXQiOjE3Njg5MDc5NTE', {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          maxAge: 15 * 60 * 1000 // 15 minutes
-        });
-      } else {
-        res.status(201).json({
-          status: "SUCCESS",
-          message: 'OTP sent to your email. Please verify to log in',
-          email: response.email,
-          token: response.token,
-          redirect: '/authOTP'
-        });
-        res.cookie('otp_pending', '_eyJfaWQiOiI2OTAyMjdhYzI2DEiLCJpYXQiOjE3Njg5MDc5NTE', {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          maxAge: 15 * 60 * 1000 // 15 minutes
-        });
-      }
-
     }
+
+    // ─────────────────────────────
+    // CASE 2: already registered → OTP pending
+    // ─────────────────────────────
+    if (response.status === 400 && response.message === 'You have already try to register with this email.We have already sent a OTP to your email Please VERIFY!.') {
+
+      res.cookie('otp_pending', 'true', otpCookieOptions);
+
+      return res.status(400).json({
+        message: response.message,
+        email: response.email,
+        token: response.token,
+        redirect: '/authOTP',
+      });
+    }
+
+    // ─────────────────────────────
+    // CASE 3: success register
+    // ─────────────────────────────
+    await res.cookie('otp_pending', 'true', otpCookieOptions);
+
+    return res.status(200).json({
+      status: 'SUCCESS',
+      message: 'OTP sent to your email. Please verify to log in',
+      email: response.email,
+      token: response.token,
+      redirect: '/authOTP',
+    });
+
   } catch (error) {
     next(error);
   }
 };
+
 
 exports.loginUser = async (req, res, next) => {
   try {
@@ -293,6 +313,7 @@ exports.forgotPassword = async (req, res) => {
   });
 
   if (recent >= 4) {
+
     await PasswordResetLog.create({
       email,
       ip,
@@ -335,7 +356,7 @@ exports.forgotPassword = async (req, res) => {
   user.resetTokenExpires = Date.now() + 15 * 60 * 1000;
   await user.save();
 
-  const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
+  const resetUrl = `${process.env.CLIENT_URL}/resetPassword-a9f3c7e2b4d8f1c6a0e9b2e7f9a1c4?token=${token}`;
 
   const emailSubject = 'NChat - Reset Password Request';
   const emailHtml = `<!DOCTYPE html>
@@ -488,7 +509,7 @@ exports.forgotPassword = async (req, res) => {
 </body>
 
 </html>
-`
+`;
   await sendEmail(
     user.email,
     emailSubject,
@@ -521,12 +542,71 @@ exports.validateResetToken = async (req, res) => {
 
   const user = await User.findOne({
     resetTokenHash: tokenHash,
-    resetTokenExpires: { $gt: Date.now() },
+    resetTokenExpires: {
+      $gt: Date.now()
+    },
   });
 
   if (!user) {
-    return res.status(400).json({ valid: false });
+    return res.status(400).json({
+      valid: false
+    });
   }
 
-  res.status(200).json({ valid: true });
+  res.status(200).json({
+    valid: true
+  });
+};
+
+// confirm the new password
+exports.resetPassword = async (req, res) => {
+  const ip = req.ip;
+  const ua = req.headers['user-agent'];
+  const {
+    token,
+    newPassword
+  } = req.body;
+
+  const tokenHash = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    resetTokenHash: tokenHash,
+    resetTokenExpires: {
+      $gt: Date.now()
+    },
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      code: 'INVALID_TOKEN',
+      message: 'Invalid or expired token',
+    });
+  }
+  //  HASH HERE
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword.trim(), salt);
+
+  user.resetTokenHash = undefined;
+  user.resetTokenExpires = undefined;
+
+
+  await user.save();
+
+  await PasswordResetLog.create({
+    userId: user._id,
+    email: user.email,
+    ip,
+    userAgent: ua,
+    success: true,
+    reason: 'password_reset_success',
+  });
+  // OPTIONAL: revoke all sessions
+  // (JWT blacklist / token versioning)
+
+  res.status(200).json({
+    success: true
+  });
 };

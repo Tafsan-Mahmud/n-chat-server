@@ -55,6 +55,25 @@ const UserSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+UserSchema.methods.cleanupSecurityFields = async function () {
+  let changed = false;
+
+  if (this.otpExpires && this.otpExpires < Date.now()) {
+    this.otp = undefined;
+    this.otpExpires = undefined;
+    changed = true;
+  }
+
+  if (this.resetTokenExpires && this.resetTokenExpires < Date.now()) {
+    this.resetTokenHash = undefined;
+    this.resetTokenExpires = undefined;
+    changed = true;
+  }
+
+  if (changed) {
+    await this.save();
+  }
+};
 
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
