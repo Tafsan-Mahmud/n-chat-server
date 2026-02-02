@@ -40,7 +40,7 @@ exports.validateToken = async (req, res) => {
 // return login users safe data.
 
 exports.returnME = async (req, res) => {
-  await req.user.cleanupSecurityFields();
+
   res.status(200).json({
     status: 'SUCCESS USER',
     _id: req.user._id,
@@ -235,7 +235,6 @@ exports.verifyOtp = async (req, res, next) => {
       });
 
       res.clearCookie('otp_pending');
-
       return res.status(200).json({
         status: 'SUCCESS',
         message: 'Login successful',

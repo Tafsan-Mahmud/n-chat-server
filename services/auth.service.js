@@ -219,6 +219,7 @@ exports.login = async (email, password) => {
   }).select('+password');
 
   if (user) {
+    
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       const error = new Error('Invalid credentials.');
@@ -229,6 +230,7 @@ exports.login = async (email, password) => {
       };
     }
     await generateAndSendOtp(user);
+    await user.cleanupSecurityFields();
     return {
       email: user.email,
       success: true
@@ -320,9 +322,3 @@ exports.verifyOtpAndLogin = async (email, otp) => {
     };
   }
 };
-
-
-
-
-
-
