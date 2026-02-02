@@ -8,13 +8,17 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-const { Server } = require('socket.io');
-const  cron  = require('node-cron');
-const  TempUser  = require('./models/TempUser');
+const {
+  Server
+} = require('socket.io');
+const cron = require('node-cron');
+const TempUser = require('./models/TempUser');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const errorHandler = require('./middleware/errorHandler');
-const { socketAuth } = require('./middleware/socketAuth.middleware');
+const {
+  socketAuth
+} = require('./middleware/socketAuth.middleware');
 
 
 const app = express();
@@ -34,7 +38,9 @@ connectDB();
 
 // Express Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({
+  extended: false
+}));
 app.use(cors({
   origin: process.env.CLIENT_URL,
   credentials: true,
@@ -52,12 +58,17 @@ const limiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  message: {
+    message: 'Too many attempts. Please try again later.',
+  },
 });
 app.use(limiter);
 
 // Test route
 app.get('/', (req, res) => {
-  res.status(200).json({ message: 'API is running successfully!' });
+  res.status(200).json({
+    message: 'API is running successfully!'
+  });
 });
 
 // Routes
@@ -100,7 +111,11 @@ io.on('connection', (socket) => {
 cron.schedule('*/15 * * * *', async () => {
   try {
     const now = new Date();
-    const result = await TempUser.deleteMany({ otpExpires: { $lt: now } });
+    const result = await TempUser.deleteMany({
+      otpExpires: {
+        $lt: now
+      }
+    });
     console.log(`Cron job: Deleted ${result.deletedCount} expired temporary users.`);
   } catch (error) {
     console.error('Error running cron job:', error);
