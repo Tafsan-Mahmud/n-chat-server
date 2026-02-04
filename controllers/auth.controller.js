@@ -273,12 +273,7 @@ exports.logoutUser = (req, res) => {
       message: 'Logout successful',
     });
   } catch (err) {
-    console.error('Logout error:', err);
-    return res.status(500).json({
-      success: false,
-      status: 500,
-      message: 'Server error while logging out',
-    });
+    next(error);
   }
 };
 
@@ -296,69 +291,70 @@ exports.forgotPasswordInit = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
-  const {
-    email
-  } = req.body;
-  const ip = req.ip;
-  const ua = req.headers['user-agent'];
+  try {
+    const {
+      email
+    } = req.body;
+    const ip = req.ip;
+    const ua = req.headers['user-agent'];
 
-  // Rate limit: same IP + email
-  const recent = await PasswordResetLog.countDocuments({
-    email,
-    ip,
-    createdAt: {
-      $gt: Date.now() - 15 * 60 * 1000
-    },
-  });
-
-  if (recent >= 4) {
-
-    await PasswordResetLog.create({
+    // Rate limit: same IP + email
+    const recent = await PasswordResetLog.countDocuments({
       email,
       ip,
-      userAgent: ua,
-      success: false,
-      reason: 'rate_limited',
+      createdAt: {
+        $gt: Date.now() - 15 * 60 * 1000
+      },
     });
 
-    return res.status(200).json({
-      message: 'If email exists, reset link sent.',
+    if (recent >= 4) {
+
+      await PasswordResetLog.create({
+        email,
+        ip,
+        userAgent: ua,
+        success: false,
+        reason: 'rate_limited',
+      });
+
+      return res.status(200).json({
+        message: 'If email exists, reset link sent.',
+      });
+    }
+
+    const user = await User.findOne({
+      email
     });
-  }
 
-  const user = await User.findOne({
-    email
-  });
+    if (!user) {
+      await PasswordResetLog.create({
+        email,
+        ip,
+        userAgent: ua,
+        success: false,
+        reason: 'email_not_found',
+      });
 
-  if (!user) {
-    await PasswordResetLog.create({
-      email,
-      ip,
-      userAgent: ua,
-      success: false,
-      reason: 'email_not_found',
-    });
+      return res.status(200).json({
+        message: 'If email exists, reset link sent.',
+      });
+    }
 
-    return res.status(200).json({
-      message: 'If email exists, reset link sent.',
-    });
-  }
+    // Generate secure token
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
 
-  // Generate secure token
-  const token = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
+    user.resetTokenHash = tokenHash;
+    user.resetTokenExpires = Date.now() + 15 * 60 * 1000;
+    await user.save();
 
-  user.resetTokenHash = tokenHash;
-  user.resetTokenExpires = Date.now() + 15 * 60 * 1000;
-  await user.save();
+    const resetUrl = `${process.env.CLIENT_URL}/resetPassword-a9f3c7e2b4d8f1c6a0e9b2e7f9a1c4?token=${token}`;
 
-  const resetUrl = `${process.env.CLIENT_URL}/resetPassword-a9f3c7e2b4d8f1c6a0e9b2e7f9a1c4?token=${token}`;
-
-  const emailSubject = 'NChat - Reset Password Request';
-  const emailHtml = `<!DOCTYPE html>
+    const emailSubject = 'NChat - Reset Password Request';
+    const emailHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -509,26 +505,29 @@ exports.forgotPassword = async (req, res) => {
 
 </html>
 `;
-  await sendEmail(
-    user.email,
-    emailSubject,
-    emailHtml
-  );
+    await sendEmail(
+      user.email,
+      emailSubject,
+      emailHtml
+    );
 
-  await PasswordResetLog.create({
-    email,
-    userId: user._id,
-    ip,
-    userAgent: ua,
-    success: true,
-    reason: 'reset_sent',
-  });
+    await PasswordResetLog.create({
+      email,
+      userId: user._id,
+      ip,
+      userAgent: ua,
+      success: true,
+      reason: 'reset_sent',
+    });
 
-  res.clearCookie('forgot_allowed');
+    res.clearCookie('forgot_allowed');
 
-  res.status(200).json({
-    message: 'If email exists, reset link sent.',
-  });
+    res.status(200).json({
+      message: 'If email exists, reset link sent.',
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 // validate the reset token 
@@ -559,53 +558,57 @@ exports.validateResetToken = async (req, res) => {
 
 // confirm the new password
 exports.resetPassword = async (req, res) => {
-  const ip = req.ip;
-  const ua = req.headers['user-agent'];
-  const {
-    token,
-    newPassword
-  } = req.body;
+  try {
+    const ip = req.ip;
+    const ua = req.headers['user-agent'];
+    const {
+      token,
+      newPassword
+    } = req.body;
 
-  const tokenHash = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
 
-  const user = await User.findOne({
-    resetTokenHash: tokenHash,
-    resetTokenExpires: {
-      $gt: Date.now()
-    },
-  });
-
-  if (!user) {
-    return res.status(400).json({
-      code: 'INVALID_TOKEN',
-      message: 'Invalid or expired token',
+    const user = await User.findOne({
+      resetTokenHash: tokenHash,
+      resetTokenExpires: {
+        $gt: Date.now()
+      },
     });
+
+    if (!user) {
+      return res.status(400).json({
+        code: 'INVALID_TOKEN',
+        message: 'Invalid or expired token',
+      });
+    }
+    //  HASH HERE
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword.trim(), salt);
+
+    user.resetTokenHash = undefined;
+    user.resetTokenExpires = undefined;
+
+
+    await user.save();
+
+    await PasswordResetLog.create({
+      userId: user._id,
+      email: user.email,
+      ip,
+      userAgent: ua,
+      success: true,
+      reason: 'password_reset_success',
+    });
+    res.clearCookie('hasSession');
+    res.clearCookie('token');
+
+    res.status(200).json({
+      success: true
+    });
+  } catch (err) {
+    next(err); // ← send to production error handler
   }
-  //  HASH HERE
-  const salt = await bcrypt.genSalt(10);
-  user.password = await bcrypt.hash(newPassword.trim(), salt);
-
-  user.resetTokenHash = undefined;
-  user.resetTokenExpires = undefined;
-
-
-  await user.save();
-
-  await PasswordResetLog.create({
-    userId: user._id,
-    email: user.email,
-    ip,
-    userAgent: ua,
-    success: true,
-    reason: 'password_reset_success',
-  });
-  // OPTIONAL: revoke all sessions
-  // (JWT blacklist / token versioning)
-
-  res.status(200).json({
-    success: true
-  });
 };

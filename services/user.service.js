@@ -1,5 +1,6 @@
 const Profiles = require('../models/Profiles');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 
 exports.updateProfile = async (userId, updateData) => {
   const user = await User.findById(userId).select('-password');
@@ -37,4 +38,30 @@ exports.updateProfile = async (userId, updateData) => {
   await user.save();
   const userObj = user.toObject();
   return userObj;
+};
+
+// New Password Change
+exports.changePasswordLogic = async (userId, currentPassword, newPassword) => {
+
+  const user = await User.findById(userId).select('+password');
+
+  if (!user) {
+    const err = new Error("User not found");
+    err.status = 404;
+    throw err;
+  }
+
+  // const match = await bcrypt.compare(currentPassword.trim(), user.password);
+  const match = await user.comparePassword(currentPassword.trim());
+
+  if (!match) {
+    const err = new Error("Current password is incorrect");
+    err.status = 400;
+    throw err;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword.trim(), salt);
+
+  await user.save();
 };

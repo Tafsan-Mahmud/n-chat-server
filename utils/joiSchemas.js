@@ -37,9 +37,14 @@ exports.profileUpdateSchema = Joi.object({
   userId: Joi.string().optional(), 
 });
 
-exports.passwordSchema = Joi.object({
-    oldPassword: Joi.string().required(),
-    newPassword: Joi.string().min(8).required(), // Consistent minimum length
+exports.passwordChangeSchema = Joi.object({
+  currentPassword: Joi.string().min(8).required(),
+  newPassword: Joi.string()
+    .min(8)
+    .pattern(/[A-Z]/)   // uppercase
+    .pattern(/[0-9]/)   // number
+    .pattern(/[^A-Za-z0-9]/) // special char
+    .required()
 });
 
 exports.searchSchema = Joi.object({
